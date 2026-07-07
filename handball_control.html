@@ -672,9 +672,9 @@
       <div class="kb-row"><span class="kb-key">Y</span><span class="kb-desc">Temps mort extérieur</span></div>
       <div class="kb-row"><span class="kb-key">V</span><span class="kb-desc">Masquer / afficher l'overlay</span></div>
       <div class="kb-row"><span class="kb-key">2</span><span class="kb-desc">Carton rouge domicile (→ 2min auto)</span></div>
-      <div class="kb-row"><span class="kb-key">5</span><span class="kb-desc">2 minutes domicile</span></div>
-      <div class="kb-row"><span class="kb-key">7</span><span class="kb-desc">Carton rouge extérieur (→ 2min auto)</span></div>
-      <div class="kb-row"><span class="kb-key">0</span><span class="kb-desc">2 minutes extérieur</span></div>
+      <div class="kb-row"><span class="kb-key">3</span><span class="kb-desc">2 minutes domicile</span></div>
+      <div class="kb-row"><span class="kb-key">4</span><span class="kb-desc">Carton rouge extérieur (→ 2min auto)</span></div>
+      <div class="kb-row"><span class="kb-key">5</span><span class="kb-desc">2 minutes extérieur</span></div>
       <div class="kb-row"><span class="kb-key">⇧+num</span><span class="kb-desc">Annuler une sanction</span></div>
     </div>
   </div>
@@ -806,16 +806,10 @@
       case 'v': case 'V': toggleVisibilityCtrl(); break;
       case 't': case 'T': toggleTimeoutCtrl('home'); break;
       case 'y': case 'Y': toggleTimeoutCtrl('away'); break;
-      case '1': send('sanction',{team:'home',type:'yellow',delta:shift?-1:1}); break;
       case '2': send('sanction',{team:'home',type:'red',   delta:shift?-1:1}); break;
-      case '3': send('sanction',{team:'home',type:'blue',  delta:shift?-1:1}); break;
-      case '4': send('sanction',{team:'home',type:'white', delta:shift?-1:1}); break;
-      case '5': send('sanction',{team:'home',type:'min2',  delta:shift?-1:1}); break;
-      case '6': send('sanction',{team:'away',type:'yellow',delta:shift?-1:1}); break;
-      case '7': send('sanction',{team:'away',type:'red',   delta:shift?-1:1}); break;
-      case '8': send('sanction',{team:'away',type:'blue',  delta:shift?-1:1}); break;
-      case '9': send('sanction',{team:'away',type:'white', delta:shift?-1:1}); break;
-      case '0': send('sanction',{team:'away',type:'min2',  delta:shift?-1:1}); break;
+      case '3': send('sanction',{team:'home',type:'min2',  delta:shift?-1:1}); break;
+      case '4': send('sanction',{team:'away',type:'red',   delta:shift?-1:1}); break;
+      case '5': send('sanction',{team:'away',type:'min2',  delta:shift?-1:1}); break;
     }
   });
 </script>
