@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>MHBTV – Panneau de contrôle</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0e0e0e;
+    --surface:  #181818;
+    --surface2: #222222;
+    --border:   #2e2e2e;
+    --red:      #C8181E;
+    --red-dark: #a51217;
+    --red-dim:  #7a0f13;
+    --yellow:   #F5C400;
+    --orange:   #FF6B00;
+    --blue:     #1565C0;
+    --white:    #FFFFFF;
+    --muted:    #888;
+    --text:     #f0f0f0;
+    --green:    #2E7D32;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--red);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: var(--red);
+    text-transform: uppercase;
+  }
+
+  .logo span { color: var(--text); }
+
+  .header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #444;
+    margin-left: auto;
+  }
+  .status-dot.live { background: var(--red); box-shadow: 0 0 6px var(--red); animation: pulse 1.2s infinite; }
+
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+
+  .status-label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; }
+
+  /* ── LAYOUT ── */
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 16px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ── TEAM SETUP ── */
+  #team-setup {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+
+  .team-inputs {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .team-input-group { flex: 1; min-width: 160px; }
+
+  .team-input-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 5px;
+  }
+
+  .team-input-group input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    outline: none;
+    letter-spacing: 0.04em;
+    transition: border-color 0.2s;
+  }
+
+  .team-input-group input:focus { border-color: var(--red); }
+
+  .btn-apply {
+    background: var(--red);
+    border: none;
+    color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    align-self: flex-end;
+    transition: background 0.15s;
+  }
+  .btn-apply:hover { background: var(--red-dark); }
+
+  /* ── SCORE PANEL ── */
+  .score-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+
+  .score-panel .team-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+  }
+
+  .score-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .btn-score {
+    width: 52px; height: 52px;
+    border-radius: 4px;
+    border: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.08s, filter 0.1s;
+  }
+  .btn-score:active { transform: scale(0.93); }
+
+  .btn-score.plus  { background: var(--green); color: #fff; }
+  .btn-score.plus:hover { background: #388E3C; }
+  .btn-score.minus { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-score.minus:hover { background: #2a2a2a; color: #fff; }
+
+  .score-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--text);
+    min-width: 48px;
+    text-align: center;
+    line-height: 1;
+  }
+
+  /* SHORTCUT LABEL */
+  .shortcut-hint {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 1px 5px;
+    letter-spacing: 0.04em;
+    margin-left: 4px;
+    font-family: monospace;
+  }
+
+  .hint-row { font-size: 11px; color: var(--muted); }
+
+  /* ── CHRONO ── */
+  #chrono-panel {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .chrono-display {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 52px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: 0.04em;
+    min-width: 130px;
+  }
+
+  .chrono-btns {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn-chrono {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn-chrono:hover { background: #2a2a2a; border-color: #555; }
+  .btn-chrono.play  { background: var(--green); border-color: var(--green); color: #fff; font-size: 16px; padding: 10px 28px; }
+  .btn-chrono.play:hover { background: #388E3C; }
+
+  .period-block {
+    margin-left: auto;
+    text-align: center;
+  }
+
+  .period-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.05em;
+  }
+
+  .btn-period {
+    margin-top: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .btn-period:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── SANCTIONS ── */
+  #sanctions-panel {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+
+  .sanction-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .sanction-col-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .sanction-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .sanction-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 10px;
+  }
+
+  .card-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 16px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'Barlow', sans-serif;
+    flex-shrink: 0;
+  }
+
+  .chip-red    { background: #D92B2B; color: #fff; }
+  .chip-2min   { background: #FF6B00; color: #fff; font-size: 9px; width: 28px; }
+
+  .sanction-name { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .sanction-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .btn-sm {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  .btn-sm:active { transform: scale(0.88); }
+  .btn-sm-plus  { background: var(--red); color: #fff; }
+  .btn-sm-plus:hover  { background: var(--red-dark); }
+  .btn-sm-minus { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-sm-minus:hover { color: var(--red); border-color: var(--red); }
+
+  .count-badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    padding: 1px 8px;
+    min-width: 24px;
+    text-align: center;
+  }
+
+  /* ── TIMEOUT ── */
+  #timeout-panel {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-timeout {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-timeout:hover { background: #333; border-color: #666; }
+  .btn-timeout.active { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+
+  /* ── OVERLAY VISIBILITY ── */
+  #overlay-panel {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-overlay {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+  }
+  .btn-overlay:hover { border-color: var(--red); color: var(--red); }
+  .btn-overlay.active { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+
+  /* ── KEYBOARD MAP ── */
+  #kb-map {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+
+  .kb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 6px 20px;
+    margin-top: 8px;
+  }
+
+  .kb-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 3px 0;
+    border-bottom: 1px solid #1f1f1f;
+  }
+
+  .kb-key {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    padding: 2px 7px;
+    font-family: monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .kb-desc { flex: 1; }
+
+  /* ── STATUS BAR ── */
+  #status-bar {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+
+  #status-bar .status-ok { color: #5cb85c; }
+  #status-bar .status-warn { color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MHB<span>TV</span></div>
+  <div class="header-title">Panneau de contrôle match</div>
+  <div class="status-dot live"></div>
+  <div class="status-label">EN DIRECT</div>
+</header>
+
+<main>
+
+  <!-- ÉQUIPES -->
+  <div id="team-setup">
+    <div class="section-title">Équipes</div>
+    <div class="team-inputs">
+      <div class="team-input-group">
+        <label>Domicile</label>
+        <input id="input-home" type="text" placeholder="DOMICILE" maxlength="20">
+      </div>
+      <div class="team-input-group">
+        <label>Extérieur</label>
+        <input id="input-away" type="text" placeholder="EXTÉRIEUR" maxlength="20">
+      </div>
+      <button class="btn-apply" onclick="applyNames()">Appliquer</button>
+    </div>
+  </div>
+
+  <!-- SCORE DOMICILE -->
+  <div class="score-panel">
+    <div class="team-label" id="ctrl-home-name">DOMICILE</div>
+    <div class="score-ctrl">
+      <button class="btn-score minus" onclick="send('score',{team:'home',delta:-1})">−</button>
+      <div class="score-val" id="ctrl-home-score">0</div>
+      <button class="btn-score plus"  onclick="send('score',{team:'home',delta:1})">+</button>
+    </div>
+    <div class="hint-row">But <span class="shortcut-hint">Q</span> &nbsp;|&nbsp; Annuler <span class="shortcut-hint">⇧Q</span></div>
+  </div>
+
+  <!-- SCORE VISITEUR -->
+  <div class="score-panel">
+    <div class="team-label" id="ctrl-away-name">EXTÉRIEUR</div>
+    <div class="score-ctrl">
+      <button class="btn-score minus" onclick="send('score',{team:'away',delta:-1})">−</button>
+      <div class="score-val" id="ctrl-away-score">0</div>
+      <button class="btn-score plus"  onclick="send('score',{team:'away',delta:1})">+</button>
+    </div>
+    <div class="hint-row">But <span class="shortcut-hint">E</span> &nbsp;|&nbsp; Annuler <span class="shortcut-hint">⇧E</span></div>
+  </div>
+
+  <!-- CHRONO -->
+  <div id="chrono-panel">
+    <div class="chrono-display" id="ctrl-timer">00:00</div>
+    <div class="chrono-btns">
+      <button class="btn-chrono play" onclick="send('timer',{cmd:'start'})">▶ START</button>
+      <button class="btn-chrono" onclick="send('timer',{cmd:'pause'})">⏸ PAUSE</button>
+      <button class="btn-chrono" onclick="send('timer',{cmd:'reset'})">↺ RESET</button>
+    </div>
+    <div class="period-block">
+      <div class="period-label" id="ctrl-period">1ÈRE MI-TEMPS</div>
+      <button class="btn-period" onclick="nextPeriodCtrl()">Période suivante <span class="shortcut-hint">P</span></button>
+    </div>
+  </div>
+
+  <!-- SANCTIONS -->
+  <div id="sanctions-panel">
+    <div class="section-title">Sanctions</div>
+    <div class="sanction-grid">
+
+      <!-- DOMICILE -->
+      <div class="sanction-col">
+        <div class="sanction-col-title">Domicile</div>
+        <div class="sanction-buttons">
+
+          <div class="sanction-row">
+            <span class="card-chip chip-red">R</span>
+            <span class="sanction-name">Carton rouge (disqualification)</span>
+            <span class="shortcut-hint">2</span>
+            <div class="sanction-controls">
+              <button class="btn-sm btn-sm-minus" onclick="send('sanction',{team:'home',type:'red',delta:-1})">−</button>
+              <span class="count-badge" id="ctrl-home-red">0</span>
+              <button class="btn-sm btn-sm-plus"  onclick="send('sanction',{team:'home',type:'red',delta:1})">+</button>
+            </div>
+          </div>
+
+          <div class="sanction-row">
+            <span class="card-chip chip-2min">2'</span>
+            <span class="sanction-name">2 minutes</span>
+            <span class="shortcut-hint">5</span>
+            <div class="sanction-controls">
+              <button class="btn-sm btn-sm-minus" onclick="send('sanction',{team:'home',type:'min2',delta:-1})">−</button>
+              <span class="count-badge" id="ctrl-home-2min">0</span>
+              <button class="btn-sm btn-sm-plus"  onclick="send('sanction',{team:'home',type:'min2',delta:1})">+</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- EXTÉRIEUR -->
+      <div class="sanction-col">
+        <div class="sanction-col-title">Extérieur</div>
+        <div class="sanction-buttons">
+
+          <div class="sanction-row">
+            <span class="card-chip chip-red">R</span>
+            <span class="sanction-name">Carton rouge (disqualification)</span>
+            <span class="shortcut-hint">7</span>
+            <div class="sanction-controls">
+              <button class="btn-sm btn-sm-minus" onclick="send('sanction',{team:'away',type:'red',delta:-1})">−</button>
+              <span class="count-badge" id="ctrl-away-red">0</span>
+              <button class="btn-sm btn-sm-plus"  onclick="send('sanction',{team:'away',type:'red',delta:1})">+</button>
+            </div>
+          </div>
+
+          <div class="sanction-row">
+            <span class="card-chip chip-2min">2'</span>
+            <span class="sanction-name">2 minutes</span>
+            <span class="shortcut-hint">0</span>
+            <div class="sanction-controls">
+              <button class="btn-sm btn-sm-minus" onclick="send('sanction',{team:'away',type:'min2',delta:-1})">−</button>
+              <span class="count-badge" id="ctrl-away-2min">0</span>
+              <button class="btn-sm btn-sm-plus"  onclick="send('sanction',{team:'away',type:'min2',delta:1})">+</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TEMPS MORT -->
+  <div id="timeout-panel">
+    <div class="section-title" style="margin-bottom:0;margin-right:8px;">Temps mort</div>
+    <button class="btn-timeout" id="btn-timeout-home" onclick="toggleTimeoutCtrl('home')">⏸ Domicile <span class="shortcut-hint">T</span></button>
+    <button class="btn-timeout" id="btn-timeout-away" onclick="toggleTimeoutCtrl('away')">⏸ Extérieur <span class="shortcut-hint">Y</span></button>
+  </div>
+
+  <!-- ACTIONS DIVERSES -->
+  <div id="overlay-panel">
+    <button class="btn-overlay" id="btn-visibility" onclick="toggleVisibilityCtrl()">👁 Masquer / afficher le score <span class="shortcut-hint">V</span></button>
+  </div>
+
+  <!-- RACCOURCIS -->
+  <div id="kb-map">
+    <div class="section-title">Raccourcis clavier</div>
+    <div class="kb-grid">
+      <div class="kb-row"><span class="kb-key">Espace</span><span class="kb-desc">Démarrer / pause chrono</span></div>
+      <div class="kb-row"><span class="kb-key">R</span><span class="kb-desc">Remettre le chrono à zéro</span></div>
+      <div class="kb-row"><span class="kb-key">P</span><span class="kb-desc">Période suivante (…3 = tirs au but)</span></div>
+      <div class="kb-row"><span class="kb-key">Q</span><span class="kb-desc">But domicile</span></div>
+      <div class="kb-row"><span class="kb-key">⇧Q</span><span class="kb-desc">Annuler but domicile</span></div>
+      <div class="kb-row"><span class="kb-key">E</span><span class="kb-desc">But extérieur</span></div>
+      <div class="kb-row"><span class="kb-key">⇧E</span><span class="kb-desc">Annuler but extérieur</span></div>
+      <div class="kb-row"><span class="kb-key">T</span><span class="kb-desc">Temps mort domicile</span></div>
+      <div class="kb-row"><span class="kb-key">Y</span><span class="kb-desc">Temps mort extérieur</span></div>
+      <div class="kb-row"><span class="kb-key">V</span><span class="kb-desc">Masquer / afficher l'overlay</span></div>
+      <div class="kb-row"><span class="kb-key">2</span><span class="kb-desc">Carton rouge domicile (→ 2min auto)</span></div>
+      <div class="kb-row"><span class="kb-key">5</span><span class="kb-desc">2 minutes domicile</span></div>
+      <div class="kb-row"><span class="kb-key">7</span><span class="kb-desc">Carton rouge extérieur (→ 2min auto)</span></div>
+      <div class="kb-row"><span class="kb-key">0</span><span class="kb-desc">2 minutes extérieur</span></div>
+      <div class="kb-row"><span class="kb-key">⇧+num</span><span class="kb-desc">Annuler une sanction</span></div>
+    </div>
+  </div>
+
+  <!-- STATUT -->
+  <div id="status-bar">
+    <span class="status-warn">⚠ Ouvrir <strong>handball_overlay.html</strong> dans un second onglet ou navigateur pour synchroniser via BroadcastChannel</span>
+  </div>
+
+</main>
+
+<script>
+  const bc = new BroadcastChannel('handball_overlay');
+
+  // ── State miroir ──
+  const ctrl = {
+    homeScore: 0, awayScore: 0,
+    homeSanctions: {red:0,min2:0},
+    awaySanctions: {red:0,min2:0},
+    timerSeconds: 0, timerRunning: false,
+    period: 1, timeout: false, timeoutTeam: null, visible: true,
+  };
+
+  let timerIv = null;
+  let ctrlTimeoutIv = null;
+
+  function send(action, payload) {
+    bc.postMessage({ action, payload });
+    applyLocally(action, payload);
+  }
+
+  function applyLocally(action, payload) {
+    switch(action) {
+      case 'score': {
+        const k = payload.team === 'home' ? 'homeScore' : 'awayScore';
+        ctrl[k] = Math.max(0, ctrl[k] + payload.delta);
+        document.getElementById(`ctrl-${payload.team}-score`).textContent = ctrl[k];
+        break;
+      }
+      case 'sanction': {
+        const s = payload.team === 'home' ? ctrl.homeSanctions : ctrl.awaySanctions;
+        s[payload.type] = Math.max(0, (s[payload.type]||0) + payload.delta);
+        const idMap = {red:'red',min2:'2min'};
+        document.getElementById(`ctrl-${payload.team}-${idMap[payload.type]}`).textContent = s[payload.type];
+
+        // Un carton rouge (disqualification) entraîne automatiquement une exclusion de 2 minutes.
+        if (payload.type === 'red') {
+          s.min2 = Math.max(0, (s.min2||0) + payload.delta);
+          document.getElementById(`ctrl-${payload.team}-2min`).textContent = s.min2;
+        }
+        break;
+      }
+      case 'timer': {
+        if (payload.cmd === 'start') {
+          if (!ctrl.timerRunning) { ctrl.timerRunning = true; timerIv = setInterval(() => { ctrl.timerSeconds++; updateTimerDisplay(); }, 1000); }
+        } else if (payload.cmd === 'pause') {
+          ctrl.timerRunning = false; clearInterval(timerIv);
+        } else if (payload.cmd === 'reset') {
+          ctrl.timerRunning = false; clearInterval(timerIv); ctrl.timerSeconds = 0; updateTimerDisplay();
+        }
+        break;
+      }
+      case 'period': {
+        ctrl.period = Math.min(ctrl.period + 1, 3);
+        const labels = ['', '1ÈRE MI-TEMPS', '2ÈME MI-TEMPS', 'TIRS AU BUT'];
+        document.getElementById('ctrl-period').textContent = labels[ctrl.period] || 'TIRS AU BUT';
+        break;
+      }
+      case 'timeout': {
+        // L'overlay fait un simple bascule (toggle) sur réception de 'timeout',
+        // on reproduit le même comportement ici pour rester synchronisé.
+        ctrl.timeout = !ctrl.timeout;
+        ctrl.timeoutTeam = ctrl.timeout ? payload.team : null;
+        document.getElementById('btn-timeout-home').classList.toggle('active', ctrl.timeout && ctrl.timeoutTeam === 'home');
+        document.getElementById('btn-timeout-away').classList.toggle('active', ctrl.timeout && ctrl.timeoutTeam === 'away');
+        if (ctrl.timeout) { ctrl.timerRunning = false; clearInterval(timerIv); }
+        else { ctrl.timerRunning = true; timerIv = setInterval(() => { ctrl.timerSeconds++; updateTimerDisplay(); }, 1000); }
+        break;
+      }
+      case 'visibility': {
+        ctrl.visible = !ctrl.visible;
+        document.getElementById('btn-visibility').textContent = ctrl.visible ? '👁 MASQUER OVERLAY' : '👁 AFFICHER OVERLAY';
+        document.getElementById('btn-visibility').classList.toggle('active', !ctrl.visible);
+        break;
+      }
+      case 'setNames': {
+        if (payload.home) document.getElementById('ctrl-home-name').textContent = payload.home.toUpperCase();
+        if (payload.away) document.getElementById('ctrl-away-name').textContent = payload.away.toUpperCase();
+        break;
+      }
+    }
+  }
+
+  function updateTimerDisplay() {
+    const m = Math.floor(ctrl.timerSeconds/60).toString().padStart(2,'0');
+    const s = (ctrl.timerSeconds%60).toString().padStart(2,'0');
+    document.getElementById('ctrl-timer').textContent = `${m}:${s}`;
+  }
+
+  function nextPeriodCtrl()       { send('period',{}); }
+  function toggleTimeoutCtrl(team) {
+    // L'overlay ne fait qu'un toggle simple sur 'timeout' : si un temps mort
+    // est déjà actif pour l'autre équipe, on l'éteint d'abord avant d'activer le nouveau.
+    if (ctrl.timeout && ctrl.timeoutTeam !== team) {
+      send('timeout', { team: ctrl.timeoutTeam });
+    }
+    send('timeout', { team });
+  }
+  function toggleVisibilityCtrl() { send('visibility',{}); }
+
+  function applyNames() {
+    const home = document.getElementById('input-home').value.trim() || 'DOMICILE';
+    const away = document.getElementById('input-away').value.trim() || 'EXTÉRIEUR';
+    send('setNames', { home, away });
+    document.getElementById('status-bar').innerHTML = `<span class="status-ok">✓ Noms appliqués — ${home} vs ${away}</span>`;
+  }
+
+  // Keyboard (mirrors overlay bindings, but applied locally + sent)
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    const shift = e.shiftKey;
+    switch(e.key) {
+      case ' ': e.preventDefault(); send('timer',{cmd: ctrl.timerRunning ? 'pause':'start'}); break;
+      case 'r': case 'R': send('timer',{cmd:'reset'}); break;
+      case 'p': case 'P': nextPeriodCtrl(); break;
+      case 'q': case 'Q': send('score',{team:'home',delta:shift?-1:1}); break;
+      case 'e': case 'E': send('score',{team:'away',delta:shift?-1:1}); break;
+      case 'z': case 'Z': send('goal',{}); break;
+      case 'v': case 'V': toggleVisibilityCtrl(); break;
+      case 't': case 'T': toggleTimeoutCtrl('home'); break;
+      case 'y': case 'Y': toggleTimeoutCtrl('away'); break;
+      case '1': send('sanction',{team:'home',type:'yellow',delta:shift?-1:1}); break;
+      case '2': send('sanction',{team:'home',type:'red',   delta:shift?-1:1}); break;
+      case '3': send('sanction',{team:'home',type:'blue',  delta:shift?-1:1}); break;
+      case '4': send('sanction',{team:'home',type:'white', delta:shift?-1:1}); break;
+      case '5': send('sanction',{team:'home',type:'min2',  delta:shift?-1:1}); break;
+      case '6': send('sanction',{team:'away',type:'yellow',delta:shift?-1:1}); break;
+      case '7': send('sanction',{team:'away',type:'red',   delta:shift?-1:1}); break;
+      case '8': send('sanction',{team:'away',type:'blue',  delta:shift?-1:1}); break;
+      case '9': send('sanction',{team:'away',type:'white', delta:shift?-1:1}); break;
+      case '0': send('sanction',{team:'away',type:'min2',  delta:shift?-1:1}); break;
+    }
+  });
+</script>
+</body>
+</html>
