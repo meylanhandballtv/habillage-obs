@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<title>Handball Overlay</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1920px;
+    height: 1080px;
+    background: transparent;
+    font-family: 'Barlow Condensed', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── SCOREBOARD ── */
+  #scoreboard {
+    position: absolute;
+    bottom: 48px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: stretch;
+    height: 72px;
+    filter: drop-shadow(0 4px 24px rgba(0,0,0,0.7));
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  #scoreboard.hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+    pointer-events: none;
+  }
+
+  /* Team blocks */
+  .team-block {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 22px;
+    background: rgba(10, 10, 10, 0.92);
+    min-width: 230px;
+  }
+
+  .team-name {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Sanctions strip inside team block */
+  .sanctions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+  }
+
+  .sanction-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Barlow', sans-serif;
+    letter-spacing: 0.02em;
+    padding: 2px 5px;
+    border-radius: 2px;
+    min-width: 22px;
+    height: 20px;
+    line-height: 1;
+  }
+
+  .badge-red    { background: #D92B2B; color: #fff; }
+  .badge-2min   { background: #FF6B00; color: #fff; }
+
+  .badge-zero { opacity: 0.25; }
+
+  /* Center score area */
+  #score-center {
+    display: flex;
+    align-items: stretch;
+    background: rgba(10, 10, 10, 0.96);
+    border-left: 1px solid rgba(255,255,255,0.08);
+    border-right: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .score-digit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.01em;
+    width: 72px;
+    padding: 0 4px;
+  }
+
+  .score-sep {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.3);
+    padding: 0 4px;
+  }
+
+  /* Timer block */
+  #timer-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #C8181E;
+    padding: 0 18px;
+    min-width: 90px;
+  }
+
+  #timer-display {
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  #period-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.75);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  /* Home team is left, reversed layout */
+  #team-home {
+    flex-direction: row-reverse;
+  }
+  #team-home .team-name {
+    text-align: right;
+  }
+  #team-home .sanctions {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  /* ── TIMEOUT BANNER ── */
+  #timeout-banner {
+    position: absolute;
+    top: 38px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,10,10,0.92);
+    border-left: 4px solid #C8181E;
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+  }
+
+  #timeout-banner.show {
+    opacity: 1;
+  }
+
+  #timeout-label {
+    font-size: 18px;
+    font-weight: 800;
+    color: #C8181E;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  #timeout-team {
+    font-size: 18px;
+    font-weight: 600;
+    color: #FFFFFF;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  #timeout-timer {
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-left: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── EXCLUSION TICKER ── */
+  #exclusion-ticker {
+    position: absolute;
+    top: 52px;
+    right: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+  }
+
+  .exclusion-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(10,10,10,0.88);
+    border-left: 3px solid #FF6B00;
+    padding: 5px 10px 5px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.04em;
+    animation: chipIn 0.3s ease, chipOut 0.4s ease 119.6s forwards;
+  }
+
+  .exclusion-chip .chip-time {
+    font-size: 11px;
+    color: #FF6B00;
+    font-weight: 700;
+  }
+
+  @keyframes chipIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes chipOut {
+    to { opacity: 0; transform: translateX(20px); }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- Timeout banner -->
+<div id="timeout-banner">
+  <span id="timeout-label">⏸ TEMPS MORT</span>
+  <span id="timeout-team"></span>
+  <span id="timeout-timer">1:00</span>
+</div>
+
+<!-- Exclusion ticker (2 min chips) -->
+<div id="exclusion-ticker"></div>
+
+<!-- Main scoreboard -->
+<div id="scoreboard">
+
+  <!-- Home team -->
+  <div class="team-block" id="team-home">
+    <span class="team-name" id="home-name">DOMICILE</span>
+  </div>
+
+  <!-- Score center -->
+  <div id="score-center">
+    <div class="score-digit" id="home-score">0</div>
+       <!-- Timer -->
+       <div id="timer-block">
+          <div id="timer-display">00:00</div>
+          <div id="period-label">1ÈRE MI-TEMPS</div>
+    </div>
+    <div class="score-digit" id="away-score">0</div>
+  </div>
+
+  
+
+  <!-- Away team -->
+  <div class="team-block" id="team-away">
+    <span class="team-name" id="away-name">EXTÉRIEUR</span>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ──
+const state = {
+  homeScore: 0, awayScore: 0,
+  homeSanctions: { red:0, min2:0 },
+  awaySanctions: { red:0, min2:0 },
+  timerRunning: false,
+  timerSeconds: 0,
+  period: 1,
+  scoreboardVisible: true,
+  timeoutActive: false,
+};
+
+let timerInterval = null;
+
+// ── TIMER ──
+function formatTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2,'0');
+  const ss = (s % 60).toString().padStart(2,'0');
+  return `${m}:${ss}`;
+}
+
+function tickTimer() {
+  state.timerSeconds++;
+  document.getElementById('timer-display').textContent = formatTime(state.timerSeconds);
+}
+
+function startTimer()  { if (!state.timerRunning) { state.timerRunning = true; timerInterval = setInterval(tickTimer, 1000); } }
+function pauseTimer()  { if (state.timerRunning)  { state.timerRunning = false; clearInterval(timerInterval); } }
+function toggleTimer() { state.timerRunning ? pauseTimer() : startTimer(); }
+function resetTimer()  { pauseTimer(); state.timerSeconds = 0; document.getElementById('timer-display').textContent = '00:00'; }
+
+function nextPeriod() {
+  state.period = state.period >= 3 ? 3 : state.period + 1;
+  const labels = ['', '1ÈRE MI-TEMPS', '2ÈME MI-TEMPS', 'TIRS AU BUT'];
+  document.getElementById('period-label').textContent = labels[state.period] || 'TIRS AU BUT';
+}
+
+// ── SCORES ──
+function addScore(team, delta=1) {
+  if (team === 'home') {
+    state.homeScore = Math.max(0, state.homeScore + delta);
+    document.getElementById('home-score').textContent = state.homeScore;
+  } else {
+    state.awayScore = Math.max(0, state.awayScore + delta);
+    document.getElementById('away-score').textContent = state.awayScore;
+  }
+}
+
+// ── SANCTIONS ──
+function addSanction(team, type, delta=1) {
+  const s = team === 'home' ? state.homeSanctions : state.awaySanctions;
+  s[type] = Math.max(0, (s[type] || 0) + delta);
+  if (type === 'min2' && delta > 0) addExclusionChip(team);
+
+  // Un carton rouge (disqualification) entraîne automatiquement une exclusion de 2 minutes.
+  if (type === 'red' && delta !== 0) {
+    s.min2 = Math.max(0, (s.min2 || 0) + delta);
+    if (delta > 0) addExclusionChip(team);
+  }
+}
+
+// ── EXCLUSION CHIPS ──
+function addExclusionChip(team) {
+  const ticker = document.getElementById('exclusion-ticker');
+  const chip = document.createElement('div');
+  chip.className = 'exclusion-chip';
+  const teamName = team === 'home'
+    ? document.getElementById('home-name').textContent
+    : document.getElementById('away-name').textContent;
+  chip.innerHTML = `<span class="chip-time">2:00</span> Exclusion — ${teamName}`;
+  ticker.appendChild(chip);
+
+  // countdown inside chip
+  let rem = 120;
+  const iv = setInterval(() => {
+    if (!state.timerRunning) return;
+    rem--;
+    if (rem <= 0) { clearInterval(iv); setTimeout(() => chip.remove(), 400); return; }
+    chip.querySelector('.chip-time').textContent = formatTime(rem);
+  }, 1000);
+}
+
+// ── TOGGLE VISIBILITY ──
+function toggleScoreboard() {
+  state.scoreboardVisible = !state.scoreboardVisible;
+  document.getElementById('scoreboard').classList.toggle('hidden', !state.scoreboardVisible);
+}
+
+// ── TIMEOUT ──
+let timeoutInterval = null;
+let timeoutSeconds = 60;
+
+function formatTimeoutTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+function startTimeoutCountdown() {
+  clearInterval(timeoutInterval);
+  timeoutSeconds = 60;
+  document.getElementById('timeout-timer').textContent = formatTimeoutTime(timeoutSeconds);
+  timeoutInterval = setInterval(() => {
+    timeoutSeconds--;
+    if (timeoutSeconds <= 0) {
+      clearInterval(timeoutInterval);
+      endTimeoutAuto();
+      return;
+    }
+    document.getElementById('timeout-timer').textContent = formatTimeoutTime(timeoutSeconds);
+  }, 1000);
+}
+
+// Fin automatique de la minute de temps mort : le bandeau disparaît,
+// le chrono du match reste en pause (il ne redémarre jamais tout seul).
+function endTimeoutAuto() {
+  state.timeoutActive = false;
+  document.getElementById('timeout-banner').classList.remove('show');
+}
+
+// payload est optionnel (ex: { team: 'home' }) et n'est utilisé que s'il est fourni,
+// pour ne rien changer au contrat des messages BroadcastChannel existants.
+function toggleTimeout(payload) {
+  state.timeoutActive = !state.timeoutActive;
+  document.getElementById('timeout-banner').classList.toggle('show', state.timeoutActive);
+
+  if (state.timeoutActive) {
+    const teamEl = document.getElementById('timeout-team');
+    if (payload && payload.team) {
+      teamEl.textContent = payload.team === 'home'
+        ? document.getElementById('home-name').textContent
+        : document.getElementById('away-name').textContent;
+    } else {
+      teamEl.textContent = '';
+    }
+    startTimeoutCountdown();
+    pauseTimer();
+  } else {
+    clearInterval(timeoutInterval);
+    // Le chrono ne redémarre jamais automatiquement : c'est à l'opérateur de le relancer.
+  }
+}
+
+// ── KEYBOARD BINDINGS ──
+// Space         → Play/Pause timer
+// R             → Reset timer
+// P             → Next period
+// Q/E           → Home −1 / +1 score
+// A/D           → Away −1 / +1 score
+// V             → Toggle scoreboard visibility
+// T             → Timeout
+// Sanctions HOME : 2=carton rouge (→ 2min auto)  5=2min
+// Sanctions AWAY : 7=carton rouge (→ 2min auto)  0=2min
+// Shift+key     → Annuler une sanction (−1)
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  const shift = e.shiftKey;
+
+  switch(e.key) {
+    case ' ':      e.preventDefault(); toggleTimer(); break;
+    case 'r': case 'R': resetTimer(); break;
+    case 'p': case 'P': nextPeriod(); break;
+    case 'q': case 'Q': addScore('home', shift ? -1 : 1); break;
+    case 'e': case 'E': addScore('away', shift ? -1 : 1); break;
+    case 'v': case 'V': toggleScoreboard(); break;
+    case 't': case 'T': toggleTimeout(); break;
+    case '2': addSanction('home','red',    shift?-1:1); break;
+    case '5': addSanction('home','min2',   shift?-1:1); break;
+    case '7': addSanction('away','red',    shift?-1:1); break;
+    case '0': addSanction('away','min2',   shift?-1:1); break;
+  }
+});
+
+// ── BroadcastChannel (communication avec le panneau de contrôle) ──
+const bc = new BroadcastChannel('handball_overlay');
+bc.onmessage = (e) => {
+  const { action, payload } = e.data;
+  switch(action) {
+    case 'score':      addScore(payload.team, payload.delta); break;
+    case 'sanction':   addSanction(payload.team, payload.type, payload.delta); break;
+    case 'timer':      if(payload.cmd==='start') startTimer(); else if(payload.cmd==='pause') pauseTimer(); else if(payload.cmd==='reset') resetTimer(); break;
+    case 'period':     nextPeriod(); break;
+    case 'timeout':    toggleTimeout(payload); break;
+    case 'visibility': toggleScoreboard(); break;
+    case 'setNames':
+      if(payload.home) document.getElementById('home-name').textContent = payload.home.toUpperCase();
+      if(payload.away) document.getElementById('away-name').textContent = payload.away.toUpperCase();
+      break;
+  }
+};
+</script>
+</body>
+</html>
