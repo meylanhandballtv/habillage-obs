@@ -300,6 +300,46 @@
   }
   .btn-period:hover { border-color: var(--red); color: var(--red); }
 
+  .period-duration {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .period-duration label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .period-duration input {
+    width: 52px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    padding: 4px 2px;
+    outline: none;
+  }
+  .period-duration input:focus { border-color: var(--red); }
+
+  .remaining-label {
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+    text-align: center;
+  }
+  .remaining-label.overtime { color: var(--red); }
+
   /* ── SANCTIONS ── */
   #sanctions-panel {
     grid-column: 1 / -1;
@@ -574,6 +614,11 @@
     <div class="period-block">
       <div class="period-label" id="ctrl-period">1ÈRE MI-TEMPS</div>
       <button class="btn-period" onclick="nextPeriodCtrl()">Période suivante <span class="shortcut-hint">P</span></button>
+      <div class="period-duration">
+        <label for="input-period-duration">Durée (min)</label>
+        <input type="number" id="input-period-duration" min="1" max="60" value="30" onchange="setPeriodDuration()">
+      </div>
+      <div class="remaining-label" id="ctrl-remaining">Restant : 30:00</div>
     </div>
   </div>
 
@@ -695,7 +740,7 @@
     homeSanctions: {red:0,min2:0},
     awaySanctions: {red:0,min2:0},
     timerSeconds: 0, timerRunning: false,
-    period: 1, timeout: false, timeoutTeam: null, visible: true,
+    period: 1, periodDurationMinutes: 30, timeout: false, timeoutTeam: null, visible: true,
   };
 
   let timerIv = null;
@@ -729,7 +774,7 @@
       }
       case 'timer': {
         if (payload.cmd === 'start') {
-          if (!ctrl.timerRunning) { ctrl.timerRunning = true; timerIv = setInterval(() => { ctrl.timerSeconds++; updateTimerDisplay(); }, 1000); }
+          startCtrlTimer();
         } else if (payload.cmd === 'pause') {
           ctrl.timerRunning = false; clearInterval(timerIv);
         } else if (payload.cmd === 'reset') {
@@ -750,8 +795,20 @@
         ctrl.timeoutTeam = ctrl.timeout ? payload.team : null;
         document.getElementById('btn-timeout-home').classList.toggle('active', ctrl.timeout && ctrl.timeoutTeam === 'home');
         document.getElementById('btn-timeout-away').classList.toggle('active', ctrl.timeout && ctrl.timeoutTeam === 'away');
-        if (ctrl.timeout) { ctrl.timerRunning = false; clearInterval(timerIv); }
-        else { ctrl.timerRunning = true; timerIv = setInterval(() => { ctrl.timerSeconds++; updateTimerDisplay(); }, 1000); }
+
+        clearTimeout(ctrlTimeoutIv);
+        if (ctrl.timeout) {
+          ctrl.timerRunning = false; clearInterval(timerIv);
+          // Le temps mort dure 1 minute : à l'échéance, le bandeau disparaît côté overlay
+          // et le bouton se désactive ici tout seul, sans relancer le chrono du match.
+          ctrlTimeoutIv = setTimeout(() => {
+            ctrl.timeout = false;
+            ctrl.timeoutTeam = null;
+            document.getElementById('btn-timeout-home').classList.remove('active');
+            document.getElementById('btn-timeout-away').classList.remove('active');
+          }, 60000);
+        }
+        // Le chrono ne redémarre jamais automatiquement, ni à l'échéance ni à l'arrêt manuel.
         break;
       }
       case 'visibility': {
@@ -768,10 +825,52 @@
     }
   }
 
+  function startCtrlTimer() {
+    if (ctrl.timerRunning) return;
+    ctrl.timerRunning = true;
+    timerIv = setInterval(() => {
+      ctrl.timerSeconds++;
+      updateTimerDisplay();
+      // Durée de la période atteinte : on stoppe le chrono partout (overlay + contrôle)
+      // en réutilisant le message 'timer' pause déjà existant.
+      if (ctrl.timerSeconds >= ctrl.periodDurationMinutes * 60) {
+        send('timer', { cmd: 'pause' });
+      }
+    }, 1000);
+  }
+
   function updateTimerDisplay() {
     const m = Math.floor(ctrl.timerSeconds/60).toString().padStart(2,'0');
     const s = (ctrl.timerSeconds%60).toString().padStart(2,'0');
     document.getElementById('ctrl-timer').textContent = `${m}:${s}`;
+    updateRemainingDisplay();
+  }
+
+  function updateRemainingDisplay() {
+    const totalSeconds = ctrl.periodDurationMinutes * 60;
+    const remaining = totalSeconds - ctrl.timerSeconds;
+    const el = document.getElementById('ctrl-remaining');
+    if (remaining >= 0) {
+      const m = Math.floor(remaining/60).toString().padStart(2,'0');
+      const s = (remaining%60).toString().padStart(2,'0');
+      el.textContent = `Restant : ${m}:${s}`;
+      el.classList.remove('overtime');
+    } else {
+      const over = Math.abs(remaining);
+      const m = Math.floor(over/60).toString().padStart(2,'0');
+      const s = (over%60).toString().padStart(2,'0');
+      el.textContent = `Dépassement : +${m}:${s}`;
+      el.classList.add('overtime');
+    }
+  }
+
+  function setPeriodDuration() {
+    const v = parseInt(document.getElementById('input-period-duration').value, 10);
+    ctrl.periodDurationMinutes = (v && v > 0) ? v : 30;
+    updateRemainingDisplay();
+    if (ctrl.timerRunning && ctrl.timerSeconds >= ctrl.periodDurationMinutes * 60) {
+      send('timer', { cmd: 'pause' });
+    }
   }
 
   function nextPeriodCtrl()       { send('period',{}); }
@@ -802,7 +901,6 @@
       case 'p': case 'P': nextPeriodCtrl(); break;
       case 'q': case 'Q': send('score',{team:'home',delta:shift?-1:1}); break;
       case 'e': case 'E': send('score',{team:'away',delta:shift?-1:1}); break;
-      case 'z': case 'Z': send('goal',{}); break;
       case 'v': case 'V': toggleVisibilityCtrl(); break;
       case 't': case 'T': toggleTimeoutCtrl('home'); break;
       case 'y': case 'Y': toggleTimeoutCtrl('away'); break;
