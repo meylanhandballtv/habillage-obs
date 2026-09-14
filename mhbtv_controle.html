@@ -247,6 +247,61 @@
     min-width: 130px;
   }
 
+  /* Chrono éditable chiffre par chiffre */
+  .chrono-digit-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .chrono-digit-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .chrono-digit {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--text);
+    min-width: 36px;
+    text-align: center;
+    line-height: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 2px;
+  }
+
+  .chrono-sep {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--muted);
+    padding: 0 2px;
+    align-self: center;
+  }
+
+  .btn-chrono-arrow {
+    width: 36px;
+    height: 22px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+  }
+  .btn-chrono-arrow:hover  { background: #2a2a2a; color: var(--red); border-color: var(--red); }
+  .btn-chrono-arrow:active { transform: scale(0.9); }
+
   .chrono-btns {
     display: flex;
     gap: 10px;
@@ -270,6 +325,8 @@
   .btn-chrono:hover { background: #2a2a2a; border-color: #555; }
   .btn-chrono.play  { background: var(--green); border-color: var(--green); color: #fff; font-size: 16px; padding: 10px 28px; }
   .btn-chrono.play:hover { background: #388E3C; }
+  .btn-chrono.stop  { background: var(--red); border-color: var(--red); color: #fff; font-size: 16px; padding: 10px 28px; }
+  .btn-chrono.stop:hover { background: var(--red-dark); }
 
   .period-block {
     margin-left: auto;
@@ -409,7 +466,7 @@
   .sanction-controls {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     margin-left: auto;
   }
 
@@ -430,6 +487,14 @@
   .btn-sm:active { transform: scale(0.88); }
   .btn-sm-plus  { background: var(--red); color: #fff; }
   .btn-sm-plus:hover  { background: var(--red-dark); }
+  .btn-sm-plus:disabled,
+  .btn-sm-plus.maxed {
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    cursor: not-allowed;
+  }
+  .btn-sm-plus:disabled:hover { background: var(--surface); }
   .btn-sm-minus { background: transparent; color: var(--muted); border: 1px solid var(--border); }
   .btn-sm-minus:hover { color: var(--red); border-color: var(--red); }
 
@@ -444,6 +509,36 @@
     min-width: 24px;
     text-align: center;
   }
+
+  /* Emplacements individuels d'exclusion 2min (max 3 par équipe) */
+  .min2-slots {
+    display: flex;
+    gap: 4px;
+  }
+
+  .min2-slot {
+    width: 22px;
+    height: 22px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: default;
+    padding: 0;
+    transition: transform 0.1s, background 0.15s, border-color 0.15s;
+  }
+
+  .min2-slot.filled {
+    background: var(--orange);
+    border-color: var(--orange);
+    cursor: pointer;
+  }
+
+  .min2-slot.filled:hover {
+    background: var(--red-dark);
+    border-color: var(--red-dark);
+  }
+
+  .min2-slot.filled:active { transform: scale(0.85); }
 
   /* ── TIMEOUT ── */
   #timeout-panel {
@@ -611,10 +706,33 @@
 
   <!-- CHRONO -->
   <div id="chrono-panel">
-    <div class="chrono-display" id="ctrl-timer">00:00</div>
+    <div class="chrono-display-wrap">
+      <div class="chrono-digit-group">
+        <div class="chrono-digit-col">
+          <button class="btn-chrono-arrow" onclick="adjustTimeDigit('minTens',1)">▲</button>
+          <div class="chrono-digit" id="ctrl-time-minTens">0</div>
+          <button class="btn-chrono-arrow" onclick="adjustTimeDigit('minTens',-1)">▼</button>
+        </div>
+        <div class="chrono-digit-col">
+          <button class="btn-chrono-arrow" onclick="adjustTimeDigit('minUnits',1)">▲</button>
+          <div class="chrono-digit" id="ctrl-time-minUnits">0</div>
+          <button class="btn-chrono-arrow" onclick="adjustTimeDigit('minUnits',-1)">▼</button>
+        </div>
+        <div class="chrono-sep">:</div>
+        <div class="chrono-digit-col">
+          <button class="btn-chrono-arrow" onclick="adjustTimeDigit('secTens',1)">▲</button>
+          <div class="chrono-digit" id="ctrl-time-secTens">0</div>
+          <button class="btn-chrono-arrow" onclick="adjustTimeDigit('secTens',-1)">▼</button>
+        </div>
+        <div class="chrono-digit-col">
+          <button class="btn-chrono-arrow" onclick="adjustTimeDigit('secUnits',1)">▲</button>
+          <div class="chrono-digit" id="ctrl-time-secUnits">0</div>
+          <button class="btn-chrono-arrow" onclick="adjustTimeDigit('secUnits',-1)">▼</button>
+        </div>
+      </div>
+    </div>
     <div class="chrono-btns">
-      <button class="btn-chrono play" onclick="send('timer',{cmd:'start'})">▶ START</button>
-      <button class="btn-chrono" onclick="send('timer',{cmd:'pause'})">⏸ PAUSE</button>
+      <button class="btn-chrono play" id="btn-chrono-toggle" onclick="toggleChronoCtrl()">▶ START</button>
       <button class="btn-chrono" onclick="send('timer',{cmd:'reset'})">↺ RESET</button>
     </div>
     <div class="period-block">
@@ -655,11 +773,14 @@
           <div class="sanction-row">
             <span class="card-chip chip-2min">2'</span>
             <span class="sanction-name">2 minutes</span>
-            <span class="shortcut-hint">5</span>
+            <span class="shortcut-hint">3</span>
             <div class="sanction-controls">
-              <button class="btn-sm btn-sm-minus" onclick="send('sanction',{team:'home',type:'min2',delta:-1})">−</button>
-              <span class="count-badge" id="ctrl-home-2min">0</span>
-              <button class="btn-sm btn-sm-plus"  onclick="send('sanction',{team:'home',type:'min2',delta:1})">+</button>
+              <div class="min2-slots" id="ctrl-home-2min-slots">
+                <button class="min2-slot" data-idx="0" title="Cliquer pour retirer" onclick="removeMin2Slot('home',0)"></button>
+                <button class="min2-slot" data-idx="1" title="Cliquer pour retirer" onclick="removeMin2Slot('home',1)"></button>
+                <button class="min2-slot" data-idx="2" title="Cliquer pour retirer" onclick="removeMin2Slot('home',2)"></button>
+              </div>
+              <button class="btn-sm btn-sm-plus" id="ctrl-home-2min-add" onclick="send('sanction',{team:'home',type:'min2',delta:1})">+</button>
             </div>
           </div>
 
@@ -674,7 +795,7 @@
           <div class="sanction-row">
             <span class="card-chip chip-red">R</span>
             <span class="sanction-name">Carton rouge (disqualification)</span>
-            <span class="shortcut-hint">7</span>
+            <span class="shortcut-hint">4</span>
             <div class="sanction-controls">
               <button class="btn-sm btn-sm-minus" onclick="send('sanction',{team:'away',type:'red',delta:-1})">−</button>
               <span class="count-badge" id="ctrl-away-red">0</span>
@@ -685,11 +806,14 @@
           <div class="sanction-row">
             <span class="card-chip chip-2min">2'</span>
             <span class="sanction-name">2 minutes</span>
-            <span class="shortcut-hint">0</span>
+            <span class="shortcut-hint">5</span>
             <div class="sanction-controls">
-              <button class="btn-sm btn-sm-minus" onclick="send('sanction',{team:'away',type:'min2',delta:-1})">−</button>
-              <span class="count-badge" id="ctrl-away-2min">0</span>
-              <button class="btn-sm btn-sm-plus"  onclick="send('sanction',{team:'away',type:'min2',delta:1})">+</button>
+              <div class="min2-slots" id="ctrl-away-2min-slots">
+                <button class="min2-slot" data-idx="0" title="Cliquer pour retirer" onclick="removeMin2Slot('away',0)"></button>
+                <button class="min2-slot" data-idx="1" title="Cliquer pour retirer" onclick="removeMin2Slot('away',1)"></button>
+                <button class="min2-slot" data-idx="2" title="Cliquer pour retirer" onclick="removeMin2Slot('away',2)"></button>
+              </div>
+              <button class="btn-sm btn-sm-plus" id="ctrl-away-2min-add" onclick="send('sanction',{team:'away',type:'min2',delta:1})">+</button>
             </div>
           </div>
 
@@ -726,12 +850,12 @@
       <div class="kb-row"><span class="kb-key">⇧E</span><span class="kb-desc">Annuler but extérieur</span></div>
       <div class="kb-row"><span class="kb-key">T</span><span class="kb-desc">Temps mort domicile</span></div>
       <div class="kb-row"><span class="kb-key">Y</span><span class="kb-desc">Temps mort extérieur</span></div>
-      <div class="kb-row"><span class="kb-key">U</span><span class="kb-desc">TRC (bascule simple, sans décompte)</span></div>
+      <div class="kb-row"><span class="kb-key">U</span><span class="kb-desc">TRC (bascule, stoppe le chrono à l'activation)</span></div>
       <div class="kb-row"><span class="kb-key">V</span><span class="kb-desc">Masquer / afficher l'overlay</span></div>
       <div class="kb-row"><span class="kb-key">2</span><span class="kb-desc">Carton rouge domicile (→ 2min auto)</span></div>
-      <div class="kb-row"><span class="kb-key">3</span><span class="kb-desc">2 minutes domicile</span></div>
+      <div class="kb-row"><span class="kb-key">3</span><span class="kb-desc">2 minutes domicile (max 3)</span></div>
       <div class="kb-row"><span class="kb-key">4</span><span class="kb-desc">Carton rouge extérieur (→ 2min auto)</span></div>
-      <div class="kb-row"><span class="kb-key">5</span><span class="kb-desc">2 minutes extérieur</span></div>
+      <div class="kb-row"><span class="kb-key">5</span><span class="kb-desc">2 minutes extérieur (max 3)</span></div>
       <div class="kb-row"><span class="kb-key">⇧+num</span><span class="kb-desc">Annuler une sanction</span></div>
     </div>
   </div>
@@ -755,6 +879,8 @@
     period: 1, periodDurationMinutes: 30, timeout: false, timeoutTeam: null, trc: false, visible: true,
   };
 
+  const MAX_MIN2 = 3;
+
   let timerIv = null;
   let ctrlTimeoutIv = null;
 
@@ -773,14 +899,25 @@
       }
       case 'sanction': {
         const s = payload.team === 'home' ? ctrl.homeSanctions : ctrl.awaySanctions;
-        s[payload.type] = Math.max(0, (s[payload.type]||0) + payload.delta);
-        const idMap = {red:'red',min2:'2min'};
-        document.getElementById(`ctrl-${payload.team}-${idMap[payload.type]}`).textContent = s[payload.type];
 
-        // Un carton rouge (disqualification) entraîne automatiquement une exclusion de 2 minutes.
-        if (payload.type === 'red') {
-          s.min2 = Math.max(0, (s.min2||0) + payload.delta);
-          document.getElementById(`ctrl-${payload.team}-2min`).textContent = s.min2;
+        if (payload.type === 'min2') {
+          // Plafonné à MAX_MIN2 (3) exclusions affichées simultanément par équipe.
+          s.min2 = Math.max(0, Math.min(MAX_MIN2, (s.min2||0) + payload.delta));
+          updateMin2Slots(payload.team);
+        } else if (payload.type === 'red') {
+          s.red = Math.max(0, (s.red||0) + payload.delta);
+          document.getElementById(`ctrl-${payload.team}-red`).textContent = s.red;
+
+          // Un carton rouge (disqualification) entraîne automatiquement une exclusion de 2 minutes,
+          // elle aussi plafonnée à MAX_MIN2.
+          s.min2 = Math.max(0, Math.min(MAX_MIN2, (s.min2||0) + payload.delta));
+          updateMin2Slots(payload.team);
+        }
+
+        // L'ajout d'une sanction (carton rouge ou exclusion 2min) stoppe automatiquement
+        // le chrono en cours, pour ne pas décompter le temps pendant que la sanction est traitée.
+        if (payload.delta > 0 && ctrl.timerRunning) {
+          send('timer', { cmd: 'pause' });
         }
         break;
       }
@@ -791,7 +928,13 @@
           ctrl.timerRunning = false; clearInterval(timerIv);
         } else if (payload.cmd === 'reset') {
           ctrl.timerRunning = false; clearInterval(timerIv); ctrl.timerSeconds = 0; updateTimerDisplay();
+        } else if (payload.cmd === 'set') {
+          // Réglage manuel via les flèches ▲▼ sur un chiffre précis (dizaines/unités
+          // des minutes ou des secondes). Le chrono continue de tourner s'il était en marche.
+          ctrl.timerSeconds = Math.max(0, payload.seconds || 0);
+          updateTimerDisplay();
         }
+        updateChronoToggleButton();
         break;
       }
       case 'period': {
@@ -813,7 +956,11 @@
 
         clearTimeout(ctrlTimeoutIv);
         if (ctrl.timeout) {
-          ctrl.timerRunning = false; clearInterval(timerIv);
+          // Le temps mort qui démarre stoppe automatiquement le chrono du match
+          // (via le mécanisme pause standard, pour rester synchronisé avec l'overlay).
+          if (ctrl.timerRunning) {
+            send('timer', { cmd: 'pause' });
+          }
           // Le temps mort dure 1 minute : à l'échéance, le bandeau disparaît côté overlay
           // et le bouton se désactive ici tout seul, sans relancer le chrono du match.
           ctrlTimeoutIv = setTimeout(() => {
@@ -828,9 +975,12 @@
       }
       case 'trc': {
         // TRC (Temps de Régulation Comportemental) : simple bascule visuelle,
-        // aucun décompte, aucun effet sur le chrono du match.
+        // aucun décompte. L'activation stoppe le chrono du match (comme les temps morts).
         ctrl.trc = !ctrl.trc;
         document.getElementById('btn-trc').classList.toggle('active', ctrl.trc);
+        if (ctrl.trc && ctrl.timerRunning) {
+          send('timer', { cmd: 'pause' });
+        }
         break;
       }
       case 'visibility': {
@@ -844,6 +994,28 @@
         if (payload.away) document.getElementById('ctrl-away-name').textContent = payload.away.toUpperCase();
         break;
       }
+    }
+  }
+
+  // Met à jour l'affichage des 3 emplacements d'exclusion 2min pour une équipe,
+  // et grise le bouton "+" une fois le plafond atteint.
+  function updateMin2Slots(team) {
+    const count = (team === 'home' ? ctrl.homeSanctions : ctrl.awaySanctions).min2;
+    const slots = document.querySelectorAll(`#ctrl-${team}-2min-slots .min2-slot`);
+    slots.forEach((slot, i) => slot.classList.toggle('filled', i < count));
+
+    const addBtn = document.getElementById(`ctrl-${team}-2min-add`);
+    const maxed = count >= MAX_MIN2;
+    addBtn.disabled = maxed;
+    addBtn.classList.toggle('maxed', maxed);
+  }
+
+  // Retire une exclusion 2min en cliquant directement sur son emplacement :
+  // moyen rapide de corriger une erreur sans repasser par le raccourci clavier.
+  function removeMin2Slot(team, idx) {
+    const count = (team === 'home' ? ctrl.homeSanctions : ctrl.awaySanctions).min2;
+    if (idx < count) {
+      send('sanction', { team, type: 'min2', delta: -1 });
     }
   }
 
@@ -862,10 +1034,47 @@
   }
 
   function updateTimerDisplay() {
-    const m = Math.floor(ctrl.timerSeconds/60).toString().padStart(2,'0');
-    const s = (ctrl.timerSeconds%60).toString().padStart(2,'0');
-    document.getElementById('ctrl-timer').textContent = `${m}:${s}`;
+    const totalSeconds = Math.max(0, ctrl.timerSeconds);
+    const m = Math.floor(totalSeconds/60);
+    const s = totalSeconds % 60;
+    document.getElementById('ctrl-time-minTens').textContent  = Math.floor(m/10) % 10;
+    document.getElementById('ctrl-time-minUnits').textContent = m % 10;
+    document.getElementById('ctrl-time-secTens').textContent  = Math.floor(s/10);
+    document.getElementById('ctrl-time-secUnits').textContent = s % 10;
     updateRemainingDisplay();
+  }
+
+  // Ajuste un seul chiffre du chrono (±1 sur cette position uniquement, sans retenue
+  // sur le chiffre voisin) et envoie le nouveau temps total à l'overlay.
+  function adjustTimeDigit(digit, delta) {
+    const totalSeconds = Math.max(0, ctrl.timerSeconds);
+    let m = Math.floor(totalSeconds/60);
+    let s = totalSeconds % 60;
+
+    switch (digit) {
+      case 'minTens': {
+        m = Math.max(0, Math.min(99, m + delta*10));
+        break;
+      }
+      case 'minUnits': {
+        const tens = Math.floor(m/10)*10;
+        const units = ((m % 10) + delta + 10) % 10;
+        m = Math.min(99, tens + units);
+        break;
+      }
+      case 'secTens': {
+        const tens = Math.max(0, Math.min(5, Math.floor(s/10) + delta));
+        s = tens*10 + (s % 10);
+        break;
+      }
+      case 'secUnits': {
+        const units = ((s % 10) + delta + 10) % 10;
+        s = Math.floor(s/10)*10 + units;
+        break;
+      }
+    }
+
+    send('timer', { cmd: 'set', seconds: m*60 + s });
   }
 
   function updateRemainingDisplay() {
@@ -897,6 +1106,24 @@
 
   function nextPeriodCtrl()     { send('period',{dir:1}); }
   function previousPeriodCtrl() { send('period',{dir:-1}); }
+
+  // Bouton unique START/STOP : bascule selon l'état courant du chrono.
+  function toggleChronoCtrl() {
+    send('timer', { cmd: ctrl.timerRunning ? 'pause' : 'start' });
+  }
+
+  function updateChronoToggleButton() {
+    const btn = document.getElementById('btn-chrono-toggle');
+    if (ctrl.timerRunning) {
+      btn.textContent = '⏸ STOP';
+      btn.classList.remove('play');
+      btn.classList.add('stop');
+    } else {
+      btn.textContent = '▶ START';
+      btn.classList.remove('stop');
+      btn.classList.add('play');
+    }
+  }
   function toggleTimeoutCtrl(team) {
     // L'overlay ne fait qu'un toggle simple sur 'timeout' : si un temps mort
     // est déjà actif pour l'autre équipe, on l'éteint d'abord avant d'activer le nouveau.
@@ -920,7 +1147,7 @@
     if (e.target.tagName === 'INPUT') return;
     const shift = e.shiftKey;
     switch(e.key) {
-      case ' ': e.preventDefault(); send('timer',{cmd: ctrl.timerRunning ? 'pause':'start'}); break;
+      case ' ': e.preventDefault(); toggleChronoCtrl(); break;
       case 'r': case 'R': send('timer',{cmd:'reset'}); break;
       case 'p': case 'P': shift ? previousPeriodCtrl() : nextPeriodCtrl(); break;
       case 'q': case 'Q': send('score',{team:'home',delta:shift?-1:1}); break;
@@ -935,6 +1162,11 @@
       case '5': send('sanction',{team:'away',type:'min2',  delta:shift?-1:1}); break;
     }
   });
+
+  // Initialisation de l'affichage des emplacements 2min (état 0/3 au chargement)
+  updateMin2Slots('home');
+  updateMin2Slots('away');
+  updateChronoToggleButton();
 </script>
 </body>
 </html>
