@@ -349,6 +349,11 @@ const state = {
 
 let timerInterval = null;
 
+// Piles des badges "2 minutes" actuellement affichés à l'écran, pour pouvoir en
+// retirer un précisément quand le panneau de contrôle annule une exclusion
+// (clic sur un emplacement 2min, ou "−" sur un carton rouge qui l'avait générée).
+const min2Chips = { home: [], away: [] };
+
 // ── TIMER ──
 function formatTime(s) {
   const m = Math.floor(s / 60).toString().padStart(2,'0');
@@ -365,6 +370,13 @@ function startTimer()  { if (!state.timerRunning) { state.timerRunning = true; t
 function pauseTimer()  { if (state.timerRunning)  { state.timerRunning = false; clearInterval(timerInterval); } }
 function toggleTimer() { state.timerRunning ? pauseTimer() : startTimer(); }
 function resetTimer()  { pauseTimer(); state.timerSeconds = 0; document.getElementById('timer-display').textContent = '00:00'; }
+
+// Réglage manuel du chrono (flèches ▲▼ chiffre par chiffre dans le panneau de
+// contrôle) : celui-ci envoie directement le nouveau temps total en secondes.
+function setTimerSeconds(seconds) {
+  state.timerSeconds = Math.max(0, seconds || 0);
+  document.getElementById('timer-display').textContent = formatTime(state.timerSeconds);
+}
 
 // dir vaut 1 (période suivante) ou -1 (période précédente) ; 1 par défaut
 // pour rester compatible avec un ancien appel sans argument.
@@ -389,12 +401,18 @@ function addScore(team, delta=1) {
 function addSanction(team, type, delta=1) {
   const s = team === 'home' ? state.homeSanctions : state.awaySanctions;
   s[type] = Math.max(0, (s[type] || 0) + delta);
-  if (type === 'min2' && delta > 0) addExclusionChip(team);
 
-  // Un carton rouge (disqualification) entraîne automatiquement une exclusion de 2 minutes.
+  if (type === 'min2') {
+    if (delta > 0) { for (let i=0;i<delta;i++) addExclusionChip(team); }
+    else if (delta < 0) { for (let i=0;i<-delta;i++) removeExclusionChip(team); }
+  }
+
+  // Un carton rouge (disqualification) entraîne automatiquement une exclusion de
+  // 2 minutes — dans un sens comme dans l'autre, y compris à l'annulation.
   if (type === 'red' && delta !== 0) {
     s.min2 = Math.max(0, (s.min2 || 0) + delta);
-    if (delta > 0) addExclusionChip(team);
+    if (delta > 0) { for (let i=0;i<delta;i++) addExclusionChip(team); }
+    else { for (let i=0;i<-delta;i++) removeExclusionChip(team); }
   }
 }
 
@@ -406,15 +424,34 @@ function addExclusionChip(team) {
   chip.textContent = '2:00';
   container.appendChild(chip);
 
-  // Le badge ne disparaît que lorsque son propre décompte atteint 0 — jamais avant.
-  // Il se met en pause en même temps que le chrono du match.
+  // Le badge disparaît soit à l'échéance de son propre décompte, soit sur
+  // annulation explicite via removeExclusionChip. Il se met en pause en même
+  // temps que le chrono du match.
   let rem = 120;
   const iv = setInterval(() => {
     if (!state.timerRunning) return;
     rem--;
-    if (rem <= 0) { clearInterval(iv); chip.remove(); return; }
+    if (rem <= 0) { clearInterval(iv); chip.remove(); removeChipFromStack(team, chip); return; }
     chip.textContent = formatTime(rem);
   }, 1000);
+
+  min2Chips[team].push({ el: chip, iv });
+}
+
+// Retire le badge le plus récemment posé pour l'équipe donnée — appelé quand le
+// panneau de contrôle annule une exclusion 2min ou un carton rouge.
+function removeExclusionChip(team) {
+  const stack = min2Chips[team];
+  const entry = stack.pop();
+  if (!entry) return;
+  clearInterval(entry.iv);
+  entry.el.remove();
+}
+
+function removeChipFromStack(team, chipEl) {
+  const stack = min2Chips[team];
+  const idx = stack.findIndex(c => c.el === chipEl);
+  if (idx !== -1) stack.splice(idx, 1);
 }
 
 // ── TOGGLE VISIBILITY ──
@@ -486,13 +523,12 @@ function toggleTrc() {
   document.getElementById('trc-badge').classList.toggle('active', state.trcActive);
 }
 
-// ── KEYBOARD BINDINGS ──
+// ── KEYBOARD BINDINGS ── (raccourcis propres à la fenêtre overlay elle-même)
 // Space         → Play/Pause timer
 // R             → Reset timer
 // P             → Next period
 // Shift+P       → Previous period
 // Q/E           → Home −1 / +1 score
-// A/D           → Away −1 / +1 score
 // V             → Toggle scoreboard visibility
 // T             → Timeout
 // U             → TRC (bascule simple, sans décompte)
@@ -527,7 +563,12 @@ bc.onmessage = (e) => {
   switch(action) {
     case 'score':      addScore(payload.team, payload.delta); break;
     case 'sanction':   addSanction(payload.team, payload.type, payload.delta); break;
-    case 'timer':      if(payload.cmd==='start') startTimer(); else if(payload.cmd==='pause') pauseTimer(); else if(payload.cmd==='reset') resetTimer(); break;
+    case 'timer':
+      if (payload.cmd === 'start') startTimer();
+      else if (payload.cmd === 'pause') pauseTimer();
+      else if (payload.cmd === 'reset') resetTimer();
+      else if (payload.cmd === 'set') setTimerSeconds(payload.seconds);
+      break;
     case 'period':     nextPeriod(payload && payload.dir === -1 ? -1 : 1); break;
     case 'timeout':    toggleTimeout(payload); break;
     case 'trc':        toggleTrc(); break;
