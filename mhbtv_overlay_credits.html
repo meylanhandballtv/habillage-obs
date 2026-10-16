@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<title>MHBTV – Générique (overlay)</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1920px; height: 1080px;
+    background: transparent;
+    font-family: 'Barlow Condensed', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── BANDEAU DU HAUT : titre ── */
+  #top-banner {
+    position: absolute; top: 38px; left: 50%;
+    transform: translateX(-50%) translateY(-12px);
+    background: rgba(10,10,10,0.92);
+    border-left: 4px solid #C8181E;
+    padding: 10px 28px;
+    display: flex; align-items: center; gap: 16px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+  }
+  #top-banner.show { opacity: 1; transform: translateX(-50%); }
+  #top-banner img { max-height: 44px; max-width: 120px; display: none; }
+  #tb-title { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: 0.12em; text-transform: uppercase; }
+  #tb-sub   { font-size: 18px; font-weight: 600; color: rgba(255,255,255,0.7); letter-spacing: 0.06em; text-transform: uppercase; }
+  #tb-sub:empty { display: none; }
+
+  /* ── BANDEAU DU BAS : poste + membres ── */
+  #credits {
+    position: absolute; bottom: 48px; left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    display: flex; align-items: stretch; min-height: 72px;
+    filter: drop-shadow(0 4px 24px rgba(0,0,0,0.7));
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  #credits.show { opacity: 1; transform: translateX(-50%); }
+
+  #role-block {
+    display: flex; align-items: center; justify-content: center;
+    background: #C8181E; padding: 0 30px; min-width: 220px;
+    font-size: 30px; font-weight: 800; color: #fff;
+    letter-spacing: 0.08em; text-transform: uppercase; text-align: center;
+  }
+
+  #names-block {
+    display: flex; flex-wrap: wrap; align-items: center;
+    max-width: 1500px; padding: 10px 8px;
+    background: rgba(10,10,10,0.92);
+  }
+  .name {
+    font-size: 36px; font-weight: 700; color: #fff;
+    letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+    padding: 2px 28px;
+  }
+  .name + .name { border-left: 1px solid rgba(255,255,255,0.15); }
+
+  /* Affichage en colonne */
+  #names-block.col { flex-direction: column; align-items: flex-start; flex-wrap: nowrap; padding: 12px 8px; }
+  #names-block.col .name + .name { border-left: none; }
+
+  /* ── MESSAGE FINAL ── */
+  #outro {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.96);
+    font-size: 96px; font-weight: 800; letter-spacing: 0.12em; color: #fff;
+    text-transform: uppercase; text-align: center; max-width: 1600px;
+    text-shadow: 0 0 60px rgba(200,24,30,0.9), 0 4px 24px rgba(0,0,0,0.9);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  #outro.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+</style>
+</head>
+<body>
+
+<div id="outro"></div>
+
+<div id="credits">
+  <div id="role-block"></div>
+  <div id="names-block"></div>
+</div>
+
+<script>
+const KEY = 'mhbtv_credits_data';
+const bc  = new BroadcastChannel('mhbtv_credits');
+const $   = id => document.getElementById(id);
+
+let data = null;
+let index = -1;          // -1 = rien d'affiché
+let auto = false;
+let autoTimer = null, swapTimer = null;
+
+// ── DIAPOSITIVES : postes non vides, puis le message final s'il existe ──
+function slides() {
+  if (!data) return [];
+  const s = (data.sections || []).filter(x => (x.role || '').trim() || (x.names || '').trim());
+  if ((data.outro || '').trim()) s.push({ outro: true });
+  return s;
+}
+
+// ── AFFICHAGE ──
+function clearView() {
+  ['credits', 'top-banner', 'outro'].forEach(id => $(id).classList.remove('show'));
+}
+
+function fill(sl) {
+  $('tb-title').textContent = data.title || '';
+  $('tb-sub').textContent = data.subtitle || '';
+  const logo = $('tb-logo');
+  if (data.logo) { logo.src = data.logo; logo.style.display = 'block'; } else logo.style.display = 'none';
+
+  if (sl.outro) {
+    $('outro').textContent = data.outro;
+    $('outro').classList.add('show');
+    return;
+  }
+  $('role-block').textContent = sl.role || '';
+  $('role-block').style.display = sl.role ? 'flex' : 'none';
+  const names = (sl.names || '').split('\n').map(n => n.trim()).filter(Boolean);
+  const nb = $('names-block');
+  nb.className = sl.layout === 'col' ? 'col' : '';
+  nb.innerHTML = '';
+  names.forEach(n => { const d = document.createElement('div'); d.className = 'name'; d.textContent = n; nb.appendChild(d); });
+  $('top-banner').classList.add('show');
+  $('credits').classList.add('show');
+}
+
+function show(i) {
+  const list = slides();
+  clearTimeout(swapTimer); clearTimeout(autoTimer);
+  if (i < 0 || i >= list.length) { hide(); return; }
+  const wasVisible = index >= 0;
+  index = i;
+  const apply = () => { fill(list[i]); if (auto) scheduleNext(); report(); };
+  if (wasVisible) { clearView(); swapTimer = setTimeout(apply, 350); } else apply();
+  report();
+}
+
+function hide() {
+  clearTimeout(swapTimer); clearTimeout(autoTimer);
+  index = -1; auto = false;
+  clearView(); report();
+}
+
+function next() { slides().length && (index + 1 >= slides().length ? hide() : show(index + 1)); }
+function prev() { if (index > 0) show(index - 1); }
+function toggleVisibility() { index >= 0 ? hide() : show(0); }
+
+// ── MODE AUTO ──
+function scheduleNext() {
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(next, Math.max(2, (data && data.dur) || 6) * 1000);
+}
+function toggleAuto() {
+  auto = !auto;
+  if (auto) { index < 0 ? show(0) : scheduleNext(); }
+  else clearTimeout(autoTimer);
+  report();
+}
+
+// ── RETOUR D'ÉTAT VERS LE PANNEAU DE CONTRÔLE ──
+function report() {
+  bc.postMessage({ action: 'state', payload: { index, total: slides().length, auto, visible: index >= 0 } });
+}
+setInterval(report, 1500);
+
+// ── MESSAGES ──
+bc.onmessage = (e) => {
+  const { action, payload } = e.data;
+  switch (action) {
+    case 'setData':
+      data = payload;
+      if (index >= 0) { if (index >= slides().length) hide(); else { clearView(); fill(slides()[index]); } }
+      report(); break;
+    case 'next': next(); break;
+    case 'prev': prev(); break;
+    case 'goto': show(payload.index); break;
+    case 'hide': hide(); break;
+    case 'visibility': toggleVisibility(); break;
+    case 'auto': toggleAuto(); break;
+  }
+};
+
+// ── RACCOURCIS ──
+// Espace / →  Poste suivant      ←  Poste précédent
+// V           Masquer / afficher  A  Mode auto
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  switch (e.key) {
+    case ' ': e.preventDefault(); next(); break;
+    case 'ArrowRight': next(); break;
+    case 'ArrowLeft': prev(); break;
+    case 'v': case 'V': toggleVisibility(); break;
+    case 'a': case 'A': toggleAuto(); break;
+  }
+});
+
+// ── DÉMARRAGE ──
+try { const s = localStorage.getItem(KEY); if (s) data = JSON.parse(s); } catch (err) {}
+bc.postMessage({ action: 'hello' });
+</script>
+</body>
+</html>
