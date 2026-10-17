@@ -288,6 +288,90 @@
       margin-left: 8px;
       font-variant-numeric: tabular-nums;
     }
+    /* ── TIRS AU BUT ── */
+    .team-block { position: relative; }
+
+    /* Rangée de tirs (une pastille par tir), posée au-dessus de chaque bloc équipe, côté centre */
+    .so-row {
+      position: absolute;
+      bottom: 100%;
+      margin-bottom: 10px;
+      display: none;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(10, 10, 10, 0.92);
+      border-bottom: 3px solid #F5C400;
+    }
+    #team-home .so-row { right: 0; }
+    #team-away .so-row { left: 0; }
+    #scoreboard.shootout .so-row { display: flex; }
+
+    .so-pip {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Barlow', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .so-pip.goal { background: #2E9E4F; border-color: #2E9E4F; }
+    .so-pip.miss { background: #D92B2B; border-color: #D92B2B; }
+
+    /* Bloc central : le chrono laisse la place au score des tirs au but */
+    #so-tally {
+      display: none;
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    #scoreboard.shootout #timer-display { display: none; }
+    #scoreboard.shootout #so-tally { display: block; }
+    #scoreboard.shootout #timer-block { background: #16284a; }
+    #scoreboard.shootout #period-label { color: #F5C400; font-weight: 800; }
+
+    /* Bandeau d'annonce à l'arrivée aux tirs au but */
+    #so-banner {
+      position: absolute;
+      top: 38px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-16px);
+      background: rgba(10, 10, 10, 0.92);
+      border-left: 4px solid #F5C400;
+      padding: 12px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+    }
+    #so-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #so-banner-title {
+      font-size: 30px;
+      font-weight: 800;
+      color: #F5C400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    #so-banner-teams {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
   </style>
 </head>
 
@@ -300,6 +384,12 @@
     <span id="timeout-timer">1:00</span>
   </div>
 
+  <!-- Bandeau tirs au but -->
+  <div id="so-banner">
+    <span id="so-banner-title">🥅 Tirs au but</span>
+    <span id="so-banner-teams"></span>
+  </div>
+
   <!-- Main scoreboard -->
   <div id="scoreboard">
 
@@ -309,6 +399,7 @@
     <!-- Home team -->
     <div class="team-block" id="team-home">
       <span class="team-name" id="home-name">DOMICILE</span>
+      <div class="so-row" id="home-so-row"></div>
     </div>
 
     <!-- Score center -->
@@ -318,6 +409,7 @@
       <div id="timer-block">
         <div id="trc-badge">TRC</div>
         <div id="timer-display">00:00</div>
+        <div id="so-tally">0 – 0</div>
         <div id="period-label">1ÈRE MI-TEMPS</div>
       </div>
       <div class="score-digit" id="away-score">0</div>
@@ -326,6 +418,7 @@
     <!-- Away team -->
     <div class="team-block" id="team-away">
       <span class="team-name" id="away-name">EXTÉRIEUR</span>
+      <div class="so-row" id="away-so-row"></div>
     </div>
 
     <!-- Badges 2 minutes extérieur (à l'extérieur, au bout du bandeau) -->
@@ -345,6 +438,7 @@ const state = {
   scoreboardVisible: true,
   timeoutActive: false,
   trcActive: false,
+  shootout: { home: [], away: [] },   // un booléen par tir : true = marqué, false = raté
 };
 
 let timerInterval = null;
@@ -381,9 +475,71 @@ function setTimerSeconds(seconds) {
 // dir vaut 1 (période suivante) ou -1 (période précédente) ; 1 par défaut
 // pour rester compatible avec un ancien appel sans argument.
 function nextPeriod(dir = 1) {
+  const prev = state.period;
   state.period = Math.min(Math.max(state.period + dir, 1), 3);
   const labels = ['', '1ÈRE MI-TEMPS', '2ÈME MI-TEMPS', 'TIRS AU BUT'];
   document.getElementById('period-label').textContent = labels[state.period] || 'TIRS AU BUT';
+  if (state.period === 3 && prev !== 3) enterShootout();
+  else if (prev === 3 && state.period !== 3) exitShootout();
+}
+
+// ── TIRS AU BUT ──
+let soBannerTimeout = null;
+
+function renderShootout() {
+  // Même nombre de pastilles des deux côtés : 5 minimum, plus en cas de mort subite.
+  const n = Math.max(5, state.shootout.home.length, state.shootout.away.length);
+  ['home', 'away'].forEach(team => {
+    const row = document.getElementById(`${team}-so-row`);
+    const shots = state.shootout[team];
+    row.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const pip = document.createElement('div');
+      const taken = i < shots.length;
+      pip.className = 'so-pip' + (taken ? (shots[i] ? ' goal' : ' miss') : '');
+      pip.textContent = taken ? (shots[i] ? '✓' : '✕') : '';
+      row.appendChild(pip);
+    }
+  });
+  const h = state.shootout.home.filter(Boolean).length;
+  const a = state.shootout.away.filter(Boolean).length;
+  document.getElementById('so-tally').textContent = `${h} – ${a}`;
+}
+
+function enterShootout() {
+  pauseTimer();   // le chrono n'a plus lieu d'être pendant les tirs au but
+  document.getElementById('scoreboard').classList.add('shootout');
+  renderShootout();
+
+  document.getElementById('so-banner-teams').textContent =
+    `${document.getElementById('home-name').textContent} ${state.homeScore} – ${state.awayScore} ${document.getElementById('away-name').textContent}`;
+  const banner = document.getElementById('so-banner');
+  clearTimeout(soBannerTimeout);
+  if (state.scoreboardVisible) {
+    banner.classList.add('show');
+    soBannerTimeout = setTimeout(() => banner.classList.remove('show'), 5000);
+  }
+}
+
+function exitShootout() {
+  document.getElementById('scoreboard').classList.remove('shootout');
+  clearTimeout(soBannerTimeout);
+  document.getElementById('so-banner').classList.remove('show');
+}
+
+// cmd : 'goal' (tir marqué) | 'miss' (tir raté) | 'undo' (annule le dernier tir de l'équipe) | 'reset'
+function shootoutAction(team, cmd) {
+  if (cmd === 'reset') {
+    state.shootout.home = [];
+    state.shootout.away = [];
+  } else {
+    const shots = state.shootout[team];
+    if (!shots) return;
+    if (cmd === 'goal') shots.push(true);
+    else if (cmd === 'miss') shots.push(false);
+    else if (cmd === 'undo') shots.pop();
+  }
+  renderShootout();
 }
 
 // ── SCORES ──
@@ -548,6 +704,10 @@ document.addEventListener('keydown', (e) => {
     case 'e': case 'E': addScore('away', shift ? -1 : 1); break;
     case 'u': case 'U': toggleTrc(); break;
     case 'v': case 'V': toggleScoreboard(); break;
+    case 'f': case 'F': if (state.period === 3) shootoutAction('home', shift ? 'undo' : 'goal'); break;
+    case 'g': case 'G': if (state.period === 3) shootoutAction('home', shift ? 'undo' : 'miss'); break;
+    case 'j': case 'J': if (state.period === 3) shootoutAction('away', shift ? 'undo' : 'goal'); break;
+    case 'k': case 'K': if (state.period === 3) shootoutAction('away', shift ? 'undo' : 'miss'); break;
     case 't': case 'T': toggleTimeout(); break;
     case '2': addSanction('home','red',    shift?-1:1); break;
     case '5': addSanction('home','min2',   shift?-1:1); break;
@@ -572,6 +732,7 @@ bc.onmessage = (e) => {
     case 'period':     nextPeriod(payload && payload.dir === -1 ? -1 : 1); break;
     case 'timeout':    toggleTimeout(payload); break;
     case 'trc':        toggleTrc(); break;
+    case 'shootout':   shootoutAction(payload.team, payload.cmd); break;
     case 'visibility': toggleScoreboard(); break;
     case 'setNames':
       if(payload.home) document.getElementById('home-name').textContent = payload.home.toUpperCase();
