@@ -653,6 +653,63 @@
 
   #status-bar .status-ok { color: #5cb85c; }
   #status-bar .status-warn { color: var(--yellow); }
+  /* ── TIRS AU BUT ── */
+  #shootout-panel {
+    display: none;
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1px solid var(--yellow);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+  #shootout-panel.show { display: block; }
+
+  .so-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .so-col {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+  }
+
+  .so-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .so-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .so-tally {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 40px; font-weight: 800; line-height: 1; color: var(--yellow);
+  }
+
+  .so-pips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; min-height: 26px; }
+  .so-pip {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid #555;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; color: #fff; line-height: 1;
+  }
+  .so-pip.goal { background: #2E9E4F; border-color: #2E9E4F; }
+  .so-pip.miss { background: #D92B2B; border-color: #D92B2B; }
+
+  .so-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-so {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 9px 14px; border-radius: 4px; cursor: pointer;
+    transition: transform 0.08s, background 0.15s;
+  }
+  .btn-so:active { transform: scale(0.95); }
+  .btn-so.goal { background: var(--green); border-color: var(--green); color: #fff; }
+  .btn-so.goal:hover { background: #388E3C; }
+  .btn-so.miss { background: var(--red); border-color: var(--red); color: #fff; }
+  .btn-so.miss:hover { background: var(--red-dark); }
+  .btn-so.undo:hover { border-color: #555; background: #2a2a2a; }
+  .so-footer { margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -831,6 +888,34 @@
     <button class="btn-timeout" id="btn-trc" onclick="toggleTrcCtrl()">🟧 TRC <span class="shortcut-hint">U</span></button>
   </div>
 
+  <!-- TIRS AU BUT (visible uniquement en période 3) -->
+  <div id="shootout-panel">
+    <div class="section-title">Tirs au but</div>
+    <div class="so-grid">
+      <div class="so-col">
+        <div class="so-head"><span class="so-name" id="so-home-name">DOMICILE</span><span class="so-tally" id="so-home-tally">0</span></div>
+        <div class="so-pips" id="so-home-pips"></div>
+        <div class="so-btns">
+          <button class="btn-so goal" onclick="send('shootout',{team:'home',cmd:'goal'})">✓ Marqué <span class="shortcut-hint">F</span></button>
+          <button class="btn-so miss" onclick="send('shootout',{team:'home',cmd:'miss'})">✕ Raté <span class="shortcut-hint">G</span></button>
+          <button class="btn-so undo" onclick="send('shootout',{team:'home',cmd:'undo'})">↶ Annuler <span class="shortcut-hint">⇧F</span></button>
+        </div>
+      </div>
+      <div class="so-col">
+        <div class="so-head"><span class="so-name" id="so-away-name">EXTÉRIEUR</span><span class="so-tally" id="so-away-tally">0</span></div>
+        <div class="so-pips" id="so-away-pips"></div>
+        <div class="so-btns">
+          <button class="btn-so goal" onclick="send('shootout',{team:'away',cmd:'goal'})">✓ Marqué <span class="shortcut-hint">J</span></button>
+          <button class="btn-so miss" onclick="send('shootout',{team:'away',cmd:'miss'})">✕ Raté <span class="shortcut-hint">K</span></button>
+          <button class="btn-so undo" onclick="send('shootout',{team:'away',cmd:'undo'})">↶ Annuler <span class="shortcut-hint">⇧J</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="so-footer">
+      <button class="btn-so undo" onclick="resetShootoutCtrl()">↺ Réinitialiser les tirs</button>
+    </div>
+  </div>
+
   <!-- ACTIONS DIVERSES -->
   <div id="overlay-panel">
     <button class="btn-overlay" id="btn-visibility" onclick="toggleVisibilityCtrl()">👁 Masquer / afficher le score <span class="shortcut-hint">V</span></button>
@@ -857,6 +942,9 @@
       <div class="kb-row"><span class="kb-key">4</span><span class="kb-desc">Carton rouge extérieur (→ 2min auto)</span></div>
       <div class="kb-row"><span class="kb-key">5</span><span class="kb-desc">2 minutes extérieur (max 3)</span></div>
       <div class="kb-row"><span class="kb-key">⇧+num</span><span class="kb-desc">Annuler une sanction</span></div>
+      <div class="kb-row"><span class="kb-key">F / G</span><span class="kb-desc">Tirs au but : domicile marqué / raté</span></div>
+      <div class="kb-row"><span class="kb-key">J / K</span><span class="kb-desc">Tirs au but : extérieur marqué / raté</span></div>
+      <div class="kb-row"><span class="kb-key">⇧F / ⇧J</span><span class="kb-desc">Annuler le dernier tir (domicile / extérieur)</span></div>
     </div>
   </div>
 
@@ -876,6 +964,7 @@
     homeSanctions: {red:0,min2:0},
     awaySanctions: {red:0,min2:0},
     timerSeconds: 0, timerRunning: false,
+    shootout: { home: [], away: [] },
     period: 1, periodDurationMinutes: 30, timeout: false, timeoutTeam: null, trc: false, visible: true,
   };
 
@@ -941,9 +1030,17 @@
         // dir vaut 1 (période suivante) ou -1 (période précédente) ; 1 par défaut
         // pour rester compatible avec un ancien overlay qui n'enverrait pas de dir.
         const dir = (payload && payload.dir === -1) ? -1 : 1;
+        const prevPeriod = ctrl.period;
         ctrl.period = Math.min(Math.max(ctrl.period + dir, 1), 3);
         const labels = ['', '1ÈRE MI-TEMPS', '2ÈME MI-TEMPS', 'TIRS AU BUT'];
         document.getElementById('ctrl-period').textContent = labels[ctrl.period] || 'TIRS AU BUT';
+
+        // Arrivée en tirs au but : le panneau dédié apparaît et le chrono est stoppé.
+        document.getElementById('shootout-panel').classList.toggle('show', ctrl.period === 3);
+        if (ctrl.period === 3 && prevPeriod !== 3) {
+          renderShootoutCtrl();
+          if (ctrl.timerRunning) send('timer', { cmd: 'pause' });
+        }
         break;
       }
       case 'timeout': {
@@ -989,12 +1086,56 @@
         document.getElementById('btn-visibility').classList.toggle('active', !ctrl.visible);
         break;
       }
+      case 'shootout': {
+        if (payload.cmd === 'reset') {
+          ctrl.shootout.home = [];
+          ctrl.shootout.away = [];
+        } else {
+          const shots = ctrl.shootout[payload.team];
+          if (shots) {
+            if (payload.cmd === 'goal') shots.push(true);
+            else if (payload.cmd === 'miss') shots.push(false);
+            else if (payload.cmd === 'undo') shots.pop();
+          }
+        }
+        renderShootoutCtrl();
+        break;
+      }
       case 'setNames': {
-        if (payload.home) document.getElementById('ctrl-home-name').textContent = payload.home.toUpperCase();
-        if (payload.away) document.getElementById('ctrl-away-name').textContent = payload.away.toUpperCase();
+        if (payload.home) {
+          document.getElementById('ctrl-home-name').textContent = payload.home.toUpperCase();
+          document.getElementById('so-home-name').textContent = payload.home.toUpperCase();
+        }
+        if (payload.away) {
+          document.getElementById('ctrl-away-name').textContent = payload.away.toUpperCase();
+          document.getElementById('so-away-name').textContent = payload.away.toUpperCase();
+        }
         break;
       }
     }
+  }
+
+  // Reflète les tirs au but dans le panneau de contrôle (même logique que l'overlay :
+  // 5 pastilles minimum de chaque côté, davantage en cas de mort subite).
+  function renderShootoutCtrl() {
+    const n = Math.max(5, ctrl.shootout.home.length, ctrl.shootout.away.length);
+    ['home', 'away'].forEach(team => {
+      const shots = ctrl.shootout[team];
+      const box = document.getElementById(`so-${team}-pips`);
+      box.innerHTML = '';
+      for (let i = 0; i < n; i++) {
+        const pip = document.createElement('div');
+        const taken = i < shots.length;
+        pip.className = 'so-pip' + (taken ? (shots[i] ? ' goal' : ' miss') : '');
+        pip.textContent = taken ? (shots[i] ? '✓' : '✕') : '';
+        box.appendChild(pip);
+      }
+      document.getElementById(`so-${team}-tally`).textContent = shots.filter(Boolean).length;
+    });
+  }
+
+  function resetShootoutCtrl() {
+    if (confirm('Réinitialiser tous les tirs au but ?')) send('shootout', { cmd: 'reset' });
   }
 
   // Met à jour l'affichage des 3 emplacements d'exclusion 2min pour une équipe,
@@ -1154,6 +1295,10 @@
       case 'e': case 'E': send('score',{team:'away',delta:shift?-1:1}); break;
       case 'u': case 'U': toggleTrcCtrl(); break;
       case 'v': case 'V': toggleVisibilityCtrl(); break;
+      case 'f': case 'F': if (ctrl.period === 3) send('shootout',{team:'home',cmd:shift?'undo':'goal'}); break;
+      case 'g': case 'G': if (ctrl.period === 3) send('shootout',{team:'home',cmd:shift?'undo':'miss'}); break;
+      case 'j': case 'J': if (ctrl.period === 3) send('shootout',{team:'away',cmd:shift?'undo':'goal'}); break;
+      case 'k': case 'K': if (ctrl.period === 3) send('shootout',{team:'away',cmd:shift?'undo':'miss'}); break;
       case 't': case 'T': toggleTimeoutCtrl('home'); break;
       case 'y': case 'Y': toggleTimeoutCtrl('away'); break;
       case '2': send('sanction',{team:'home',type:'red',   delta:shift?-1:1}); break;
