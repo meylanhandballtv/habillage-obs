@@ -238,6 +238,14 @@
     flex-wrap: wrap;
   }
 
+  /* Bloc chrono + TRC (le TRC est placé sous les chiffres du temps) */
+  .chrono-display-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
   .chrono-display {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 52px;
@@ -540,19 +548,7 @@
 
   .min2-slot.filled:active { transform: scale(0.85); }
 
-  /* ── TIMEOUT ── */
-  #timeout-panel {
-    grid-column: 1 / -1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
+  /* ── TEMPS MORT / TRC (boutons intégrés sous le score et sous le chrono) ── */
   .btn-timeout {
     background: #2a2a2a;
     border: 1px solid #444;
@@ -569,6 +565,15 @@
   }
   .btn-timeout:hover { background: #333; border-color: #666; }
   .btn-timeout.active { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+
+  /* Temps mort sous le score de chaque équipe */
+  .score-panel .btn-timeout {
+    width: 100%;
+    margin-bottom: 14px;
+  }
+
+  /* TRC sous le chrono */
+  .chrono-display-wrap .btn-timeout { width: 100%; }
 
   /* ── OVERLAY VISIBILITY ── */
   #overlay-panel {
@@ -739,7 +744,7 @@
     </div>
   </div>
 
-  <!-- SCORE DOMICILE -->
+  <!-- SCORE DOMICILE (+ temps mort) -->
   <div class="score-panel">
     <div class="team-label" id="ctrl-home-name">DOMICILE</div>
     <div class="score-ctrl">
@@ -747,10 +752,11 @@
       <div class="score-val" id="ctrl-home-score">0</div>
       <button class="btn-score plus"  onclick="send('score',{team:'home',delta:1})">+</button>
     </div>
+    <button class="btn-timeout" id="btn-timeout-home" onclick="toggleTimeoutCtrl('home')">⏸ Temps mort <span class="shortcut-hint">T</span></button>
     <div class="hint-row">But <span class="shortcut-hint">Q</span> &nbsp;|&nbsp; Annuler <span class="shortcut-hint">⇧Q</span></div>
   </div>
 
-  <!-- SCORE VISITEUR -->
+  <!-- SCORE VISITEUR (+ temps mort) -->
   <div class="score-panel">
     <div class="team-label" id="ctrl-away-name">EXTÉRIEUR</div>
     <div class="score-ctrl">
@@ -758,10 +764,11 @@
       <div class="score-val" id="ctrl-away-score">0</div>
       <button class="btn-score plus"  onclick="send('score',{team:'away',delta:1})">+</button>
     </div>
+    <button class="btn-timeout" id="btn-timeout-away" onclick="toggleTimeoutCtrl('away')">⏸ Temps mort <span class="shortcut-hint">Y</span></button>
     <div class="hint-row">But <span class="shortcut-hint">E</span> &nbsp;|&nbsp; Annuler <span class="shortcut-hint">⇧E</span></div>
   </div>
 
-  <!-- CHRONO -->
+  <!-- CHRONO (+ TRC sous le temps) -->
   <div id="chrono-panel">
     <div class="chrono-display-wrap">
       <div class="chrono-digit-group">
@@ -787,6 +794,7 @@
           <button class="btn-chrono-arrow" onclick="adjustTimeDigit('secUnits',-1)">▼</button>
         </div>
       </div>
+      <button class="btn-timeout" id="btn-trc" onclick="toggleTrcCtrl()">🟧 TRC <span class="shortcut-hint">U</span></button>
     </div>
     <div class="chrono-btns">
       <button class="btn-chrono play" id="btn-chrono-toggle" onclick="toggleChronoCtrl()">▶ START</button>
@@ -878,14 +886,6 @@
       </div>
 
     </div>
-  </div>
-
-  <!-- TEMPS MORT -->
-  <div id="timeout-panel">
-    <div class="section-title" style="margin-bottom:0;margin-right:8px;">Temps mort</div>
-    <button class="btn-timeout" id="btn-timeout-home" onclick="toggleTimeoutCtrl('home')">⏸ Domicile <span class="shortcut-hint">T</span></button>
-    <button class="btn-timeout" id="btn-timeout-away" onclick="toggleTimeoutCtrl('away')">⏸ Extérieur <span class="shortcut-hint">Y</span></button>
-    <button class="btn-timeout" id="btn-trc" onclick="toggleTrcCtrl()">🟧 TRC <span class="shortcut-hint">U</span></button>
   </div>
 
   <!-- TIRS AU BUT (visible uniquement en période 3) -->
